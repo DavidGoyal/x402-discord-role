@@ -80,12 +80,13 @@ model RoleAssigned {
 }
 
 model Invoice {
-  id                 String @id @default(uuid())
+  id                 String   @id @default(uuid())
   userId             String
   serverId           String
   roleId             String
   roleApplicableTime Int
-  token              String @unique
+  token              String   @unique
+  expiresAt          DateTime
 
   @@unique([userId, serverId, roleId])
 }

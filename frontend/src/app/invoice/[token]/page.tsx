@@ -10,7 +10,7 @@ export default async function Page({
 }) {
   const { token } = await params;
   const invoice = await prisma.invoice.findUnique({
-    where: { token },
+    where: { token, expiresAt: { gt: new Date() } },
   });
 
   if (!invoice) {

@@ -15,7 +15,8 @@ import { createSigner } from "x402-fetch";
 
 // Configuration
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN || "YOUR_BOT_TOKEN_HERE";
-const BACKEND_URL = process.env.BACKEND_URL || "http://93.127.135.57:3001";
+const BACKEND_URL =
+  process.env.BACKEND_URL || "https://x402-discord-role-ptlz.vercel.app";
 const FRONTEND_URL =
   process.env.FRONTEND_URL || "https://x402-discord-role.vercel.app";
 
@@ -460,7 +461,8 @@ async function handleInvoicePayment(
       .setDescription(
         `**Role:** ${roleName}\n` +
           `**Duration:** ${durationInDays} days\n` +
-          `**Please visit the following link to pay:** ${FRONTEND_URL}/invoice/${token}`
+          `**Please visit the following link to pay:** ${FRONTEND_URL}/invoice/${token}\n` +
+          `**Please pay within 5 minutes of generating the invoice**`
       )
       .setColor(0xfee75c)
       .setTimestamp();
@@ -648,6 +650,7 @@ async function fetchAllServers(): Promise<ServerConfig[]> {
     });
 
     if (!response.ok) {
+      console.log(await response.json());
       console.log("Failed to fetch servers from backend");
       return [];
     }
