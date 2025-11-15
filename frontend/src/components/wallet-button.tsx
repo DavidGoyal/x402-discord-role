@@ -43,10 +43,10 @@ const WalletButton = () => {
                     <button
                       onClick={openConnectModal}
                       type="button"
-                      className="cursor-pointer border-2 h-[35px] border-[#22A6F0] text-[#22A6F0] text-[16px] lg:text-[20px]  bg-[#002D7E] font-medium rounded-[8px] px-2"
+                      className="h-9 px-4 border border-border bg-card text-foreground hover:bg-accent hover:text-accent-foreground font-medium rounded-md text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     >
                       <span className="hidden sm:block">Connect Wallet</span>
-                      <FaWallet className="sm:hidden" />
+                      <FaWallet className="sm:hidden h-4 w-4" />
                     </button>
                   </div>
                 );
@@ -57,10 +57,10 @@ const WalletButton = () => {
                     <button
                       onClick={openChainModal}
                       type="button"
-                      className="cursor-pointer border-2 h-[35px] border-[#22A6F0] text-[#22A6F0] text-[16px] lg:text-[20px]  bg-[#002D7E] font-medium rounded-[8px] px-2"
+                      className="h-9 px-4 border border-destructive bg-card text-destructive hover:bg-destructive/10 font-medium rounded-md text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     >
                       <span className="hidden sm:block">Wrong network</span>
-                      <FaWallet className="sm:hidden" />
+                      <FaWallet className="sm:hidden h-4 w-4" />
                     </button>
                   </div>
                 );
@@ -68,14 +68,14 @@ const WalletButton = () => {
               return (
                 <div className="flex flex-col items-start gap-2 h-full relative">
                   <button
-                    className="cursor-pointer border-2 h-[35px] border-[#22A6F0] text-[#22A6F0] text-[16px] lg:text-[20px]  bg-[#002D7E] font-medium rounded-[8px] px-2"
+                    className="h-9 px-4 border border-border bg-card text-foreground hover:bg-accent hover:text-accent-foreground font-medium rounded-md text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     onClick={openAccountModal}
                   >
-                    <span className="hidden sm:block">
+                    <span className="hidden sm:block font-mono">
                       {account.address.slice(0, 4)}...
                       {account.address.slice(-4)}
                     </span>
-                    <FaWallet className="sm:hidden" />
+                    <FaWallet className="sm:hidden h-4 w-4" />
                   </button>
                 </div>
               );
