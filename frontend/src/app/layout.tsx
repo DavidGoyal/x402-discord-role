@@ -4,6 +4,8 @@ import "./globals.css";
 import Providers from "@/providers/wagmi-provider";
 import "@rainbow-me/rainbowkit/styles.css";
 import { Toaster } from "@/components/ui/sonner";
+import Footer from "@/components/footer";
+import Header from "@/components/header";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,12 +28,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
         <Providers>
-          {children}
+          <Header />
+          <div className="flex-1">{children}</div>
+          <Footer />
           <Toaster position="bottom-right" />
         </Providers>
       </body>

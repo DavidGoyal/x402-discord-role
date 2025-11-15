@@ -1,6 +1,5 @@
 "use client";
 
-import WalletButton from "@/components/wallet-button";
 import { Channel, Invoice, Server, User } from "@prisma/client";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -94,30 +93,22 @@ function HomeClient({
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-3 sm:p-4 md:p-8">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
-        {/* Header with Wallet Connect */}
-        <div className="mb-6 flex justify-between gap-4">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold bg-linear-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
-              Buy Discord Role
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
-              Unlock premium features with Web3
-            </p>
-          </div>
-          <WalletButton />
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl sm:text-4xl font-bold">
+            Buy Discord Role
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
+            Unlock premium features with Web3
+          </p>
         </div>
 
         {/* Main Card */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-2xl border border-border overflow-hidden">
           {/* Role Badge Section */}
-          <div
-            className="relative p-8 sm:p-12 text-center"
-            style={{
-              background: `linear-gradient(135deg, #5865F215 0%, #5865F205 100%)`,
-            }}
-          >
+          <div className="relative p-8 sm:p-12 text-center bg-muted/20">
             <div
               className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full mb-4 shadow-lg"
               style={{ backgroundColor: "#5865F2" }}
@@ -141,22 +132,22 @@ function HomeClient({
           <div className="p-6 sm:p-8">
             {/* Wallet Info */}
             {isConnected && address && (
-              <div className="mb-6 p-4 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200/50 dark:border-blue-800/50">
+              <div className="mb-6 p-4 bg-muted/30 rounded-xl border border-border">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-medium">
+                    <p className="text-xs text-muted-foreground mb-1 font-medium">
                       Connected Wallet
                     </p>
-                    <p className="text-xs sm:text-sm font-mono text-gray-900 dark:text-white truncate">
+                    <p className="text-xs sm:text-sm font-mono truncate">
                       {address}
                     </p>
                   </div>
                   {balance && (
                     <div className="text-left sm:text-right">
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-medium">
+                      <p className="text-xs text-muted-foreground mb-1 font-medium">
                         Balance
                       </p>
-                      <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">
+                      <p className="text-sm sm:text-base font-bold">
                         {parseFloat(formatUnits(balance.value, 6)).toFixed(4)}{" "}
                         USDC
                       </p>
@@ -167,14 +158,14 @@ function HomeClient({
             )}
 
             {/* Pricing */}
-            <div className="mb-8 p-6 bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-600">
+            <div className="mb-8 p-6 bg-muted/30 rounded-xl border border-border">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  <p className="text-sm text-muted-foreground mb-1">
                     Price
                   </p>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
+                    <span className="text-3xl sm:text-4xl font-bold">
                       {paymentAmount / 1000000} USDC
                     </span>
                   </div>
@@ -185,7 +176,7 @@ function HomeClient({
             {/* Pay Button */}
             <div className="space-y-3">
               {!isConnected ? (
-                <p className="w-full bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-base sm:text-lg">
+                <p className="w-full bg-primary text-primary-foreground hover:bg-primary/90 border border-border font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-base sm:text-lg text-center">
                   Connect Wallet to Purchase
                 </p>
               ) : (
@@ -195,7 +186,7 @@ function HomeClient({
                     loading ||
                     (balance?.value || BigInt(0)) < BigInt(paymentAmount)
                   }
-                  className="w-full bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 cursor-pointer disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-base sm:text-lg"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed border border-border font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-base sm:text-lg"
                 >
                   {loading ? "Processing..." : "Purchase Role"}
                 </button>
