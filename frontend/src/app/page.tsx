@@ -157,7 +157,7 @@ export default async function Home({
                     </p>
                     <p className="text-3xl font-bold">
                       {formatNumber(
-                        platform === "discord"
+                        platform === "discord" || platform === undefined
                           ? discordStats.users
                           : telegramStats.users
                       )}
@@ -177,7 +177,7 @@ export default async function Home({
                     </p>
                     <p className="text-3xl font-bold">
                       {formatNumber(
-                        platform === "discord"
+                        platform === "discord" || platform === undefined
                           ? discordStats.servers
                           : telegramStats.servers
                       )}
@@ -188,23 +188,24 @@ export default async function Home({
               </CardContent>
             </Card>
 
-            {platform === "discord" && (
-              <Card className="border w-[300px]">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Total Channels
-                      </p>
-                      <p className="text-3xl font-bold">
-                        {formatNumber(discordStats.channels)}
-                      </p>
+            {platform === "discord" ||
+              (platform === undefined && (
+                <Card className="border w-[300px]">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm text-muted-foreground mb-1">
+                          Total Channels
+                        </p>
+                        <p className="text-3xl font-bold">
+                          {formatNumber(discordStats.channels)}
+                        </p>
+                      </div>
+                      <Activity className="h-10 w-10 text-primary opacity-50 shrink" />
                     </div>
-                    <Activity className="h-10 w-10 text-primary opacity-50 shrink" />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  </CardContent>
+                </Card>
+              ))}
           </div>
         </div>
       </div>
