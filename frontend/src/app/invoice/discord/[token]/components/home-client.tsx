@@ -1,6 +1,5 @@
 "use client";
 
-import { Channel, Invoice, Server, User } from "@prisma/client";
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatUnits } from "viem";
@@ -8,6 +7,7 @@ import { useAccount, useBalance, useWalletClient } from "wagmi";
 import axios, { AxiosError } from "axios";
 import { withPaymentInterceptor } from "x402-axios";
 import { useRouter } from "next/navigation";
+import { Invoice, Server, User } from "@/types/discord";
 
 const baseURL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -25,7 +25,7 @@ function HomeClient({
 }: {
   invoice: Invoice;
   user: User;
-  server: Server & { channels: Channel[] };
+  server: Server;
 }) {
   const channel = server.channels.find(
     (channel) => channel.roleId === invoice.roleId
@@ -70,7 +70,7 @@ function HomeClient({
 
       await api.post(endpointPath, {
         discordId: user.discordId,
-        networkId: "d243fc84-5d8a-40a3-9241-53413184fa20",
+        networkId: "2aca5e06-c690-485c-9bd7-de92dd0f3baf",
         serverId: server.serverId,
         channelId: channel?.channelId,
         roleApplicableTime: invoice.roleApplicableTime,
@@ -97,9 +97,7 @@ function HomeClient({
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl sm:text-4xl font-bold">
-            Buy Discord Role
-          </h1>
+          <h1 className="text-3xl sm:text-4xl font-bold">Buy Discord Role</h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-1">
             Unlock premium features with Web3
           </p>
@@ -161,9 +159,7 @@ function HomeClient({
             <div className="mb-8 p-6 bg-muted/30 rounded-xl border border-border">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">
-                    Price
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-1">Price</p>
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl sm:text-4xl font-bold">
                       {paymentAmount / 1000000} USDC

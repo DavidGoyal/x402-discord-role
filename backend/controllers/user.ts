@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { prisma } from "../prisma/prisma.js";
 import { createNetworkUser, getBalance } from "../utils/user.js";
 
-export const getUserInfo = async (req: Request, res: Response) => {
+export const getUserByDiscordId = async (req: Request, res: Response) => {
   try {
     const { discordId } = req.params;
     if (!discordId) {
@@ -54,6 +54,32 @@ export const getUserInfo = async (req: Request, res: Response) => {
     }
 
     res.status(200).json({ success: true, networkUsers });
+    return;
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Internal server error" });
+    return;
+  }
+};
+
+export const getUserById = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    if (!userId) {
+      return res
+        .status(400)
+        .json({ success: false, error: "User ID is required" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    res.status(200).json({ success: true, user });
     return;
   } catch (error) {
     console.error(error);

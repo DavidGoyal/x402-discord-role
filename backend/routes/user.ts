@@ -1,8 +1,10 @@
 import { Router } from "express";
-import { getUserInfo } from "../controllers/user.js";
+import { getUserByDiscordId, getUserById } from "../controllers/user.js";
+import { authenticate } from "../middleware.js";
 
 const app = Router();
 
-app.get("/user/:discordId", getUserInfo);
+app.get("/user/:discordId", authenticate, getUserByDiscordId);
+app.get("/user/id/:userId", getUserById);
 
 export default app;

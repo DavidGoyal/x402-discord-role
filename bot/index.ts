@@ -17,8 +17,7 @@ import { createSigner } from "x402-fetch";
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN || "YOUR_BOT_TOKEN_HERE";
 const BACKEND_URL =
   process.env.BACKEND_URL || "https://x402-discord-role-ptlz.vercel.app";
-const FRONTEND_URL =
-  process.env.FRONTEND_URL || "https://x402-discord-role.vercel.app";
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://x402-role.vercel.app";
 
 // Types for backend responses
 interface ChannelConfig {
@@ -285,7 +284,7 @@ async function handleDiscordWalletPayment(
       embeds: [
         new EmbedBuilder()
           .setTitle("❌ Error")
-          .setDescription("No network user found for base-sepolia.")
+          .setDescription("Not enough balance to purchase this role.")
           .setColor(0xed4245),
       ],
     });

@@ -6,6 +6,7 @@ import "@rainbow-me/rainbowkit/styles.css";
 import { Toaster } from "@/components/ui/sonner";
 import Footer from "@/components/footer";
 import Header from "@/components/header";
+import NextTopLoader from "nextjs-toploader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
         <Providers>
+          <NextTopLoader
+            color="#6FF9FF"
+            showSpinner={false}
+            zIndex={10001}
+            height={3}
+          />
           <Header />
           <div className="flex-1">{children}</div>
           <Footer />

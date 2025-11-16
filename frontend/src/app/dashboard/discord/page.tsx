@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import React from "react";
 import AdminDashboard from "./client";
 import { cookies } from "next/headers";
-import { MyServer } from "@/types/telegram";
+import { MyServer } from "@/types/discord";
 
 async function getMyServers(): Promise<MyServer[]> {
   try {
@@ -10,7 +10,7 @@ async function getMyServers(): Promise<MyServer[]> {
     const authCookie = cookieStore.get("x402roleaccess-siwe");
 
     const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_TELEGRAM_APP_URL}/api/server/my-servers`,
+      `${process.env.NEXT_PUBLIC_DISCORD_APP_URL}/api/server/my-servers`,
       {
         headers: {
           Cookie: authCookie ? `x402roleaccess-siwe=${authCookie.value}` : "",

@@ -50,6 +50,7 @@ model NetworkUser {
 model Server {
   id                      String    @id @default(uuid())
   serverId                String    @unique
+  name                    String
   defaultChannelId        String
   receiverSolanaAddress   String
   receiverEthereumAddress String
@@ -59,13 +60,16 @@ model Server {
 }
 
 model Channel {
-  id                 String @id @default(uuid())
-  channelId          String @unique
+  id                 String         @id @default(uuid())
+  channelId          String         @unique
   serverId           String
   costInUsdc         BigInt
   roleId             String
+  roleName           String
+  channelName        String
   roleApplicableTime Int[]
-  server             Server @relation(fields: [serverId], references: [id])
+  server             Server         @relation(fields: [serverId], references: [id])
+  roleAssigneds      RoleAssigned[]
 }
 
 model RoleAssigned {
@@ -74,7 +78,10 @@ model RoleAssigned {
   roleId     String
   serverId   String
   expiryTime DateTime
+  channelId  String
+  channel    Channel  @relation(fields: [channelId], references: [id])
   createdAt  DateTime @default(now())
+  active     Boolean  @default(true)
 
   @@index([expiryTime])
 }

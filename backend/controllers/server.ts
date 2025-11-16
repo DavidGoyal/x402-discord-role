@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import type { Request, Response } from "express";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 
@@ -147,6 +148,141 @@ export const getChannelById = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error fetching channel:", error);
+    res.status(500).json({ success: false, error: "Internal server error" });
+  }
+};
+
+export const getMyServers = async (req: Request, res: Response) => {
+  try {
+    const cookie = req.cookies["x402roleaccess-siwe"];
+    if (!cookie) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized",
+      });
+    }
+
+    const address = jwt.verify(cookie, process.env.JWT_SECRET!) as string;
+    if (!address) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized",
+      });
+    }
+
+    const servers = await prisma.server.findMany({
+      where: {
+        receiverEthereumAddress: { equals: address, mode: "insensitive" },
+      },
+      include: {
+        channels: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      servers: servers.map((server) => ({
+        id: server.id,
+        serverId: server.serverId,
+        serverName: server.name,
+        channelCount: server.channels.length,
+        walletAddresses: server.receiverEthereumAddress,
+      })),
+    });
+  } catch (error) {
+    console.error("Error fetching my servers:", error);
+    res.status(500).json({ success: false, error: "Internal server error" });
+  }
+};
+
+export const getMyServerByServerId = async (req: Request, res: Response) => {
+  try {
+    const cookie = req.cookies["x402roleaccess-siwe"];
+    if (!cookie) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized",
+      });
+    }
+
+    const address = jwt.verify(cookie, process.env.JWT_SECRET!) as string;
+    if (!address) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized",
+      });
+    }
+
+    const { serverId } = req.params;
+    if (!serverId) {
+      return res.status(400).json({
+        success: false,
+        error: "Server ID is required",
+      });
+    }
+
+    const server = await prisma.server.findUnique({
+      where: {
+        serverId,
+        receiverEthereumAddress: { equals: address, mode: "insensitive" },
+      },
+      include: {
+        channels: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    if (!server) {
+      return res.status(404).json({
+        success: false,
+        error: "Server not found",
+      });
+    }
+
+    const rolesAssigned = await prisma.roleAssigned.findMany({
+      where: {
+        serverId,
+      },
+      include: {
+        channel: {
+          select: {
+            roleName: true,
+            roleApplicableTime: true,
+            channelName: true,
+            costInUsdc: true,
+          },
+        },
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      serverName: server.name,
+      rolesAssigned: rolesAssigned.map((roleAssigned) => ({
+        id: roleAssigned.id,
+        userId: roleAssigned.userId,
+        roleId: roleAssigned.roleId,
+        serverId: roleAssigned.serverId,
+        createdAt: roleAssigned.createdAt,
+        expiryTime: roleAssigned.expiryTime,
+        active: roleAssigned.active,
+        channel: {
+          roleName: roleAssigned.channel.roleName,
+          roleApplicableTime: roleAssigned.channel.roleApplicableTime,
+          channelName: roleAssigned.channel.channelName,
+          costInUsdc: roleAssigned.channel.costInUsdc.toString(),
+        },
+      })),
+    });
+  } catch (error) {
+    console.error("Error fetching my server by server ID:", error);
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 };

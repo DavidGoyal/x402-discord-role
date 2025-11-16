@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import WalletButton from "@/components/wallet-button";
 
@@ -17,4 +15,3 @@ export default function Header() {
     </header>
   );
 }
-
