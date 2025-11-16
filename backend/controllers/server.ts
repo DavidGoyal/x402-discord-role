@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
-
-const prisma = new PrismaClient();
+import { prisma } from "../prisma/prisma.js";
 
 // Get all servers where bot is configured
 export const getAllServers = async (req: Request, res: Response) => {
