@@ -50,6 +50,7 @@ model NetworkUser {
 model Server {
   id                      String    @id @default(uuid())
   serverId                String    @unique
+  ownerAddress            String
   name                    String
   defaultChannelId        String
   receiverSolanaAddress   String
@@ -57,6 +58,7 @@ model Server {
   channels                Channel[]
 
   @@index([serverId])
+  @@index([ownerAddress])
 }
 
 model Channel {

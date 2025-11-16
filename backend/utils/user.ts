@@ -3,6 +3,7 @@ import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { prisma } from "../prisma/prisma.js";
 import { ethers } from "ethers";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
+import jwt from "jsonwebtoken";
 
 export const createNetworkUser = async (
   networkId: string,
@@ -17,7 +18,10 @@ export const createNetworkUser = async (
         networkId,
         userId,
         publicKey: keypair.publicKey.toBase58(),
-        privateKey: keypair.secretKey.toString(),
+        privateKey: jwt.sign(
+          { privateKey: keypair.secretKey.toString() },
+          process.env.JWT_SECRET!
+        ),
       },
     });
   } else {
@@ -27,7 +31,10 @@ export const createNetworkUser = async (
         networkId,
         userId,
         publicKey: keypair.address,
-        privateKey: keypair.privateKey,
+        privateKey: jwt.sign(
+          { privateKey: keypair.privateKey },
+          process.env.JWT_SECRET!
+        ),
       },
     });
   }

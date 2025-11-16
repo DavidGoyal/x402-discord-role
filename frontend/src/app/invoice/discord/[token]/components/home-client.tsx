@@ -9,7 +9,7 @@ import { withPaymentInterceptor } from "x402-axios";
 import { useRouter } from "next/navigation";
 import { Invoice, Server, User } from "@/types/discord";
 
-const baseURL = process.env.NEXT_PUBLIC_BASE_URL;
+const baseURL = process.env.NEXT_PUBLIC_DISCORD_APP_URL;
 
 const baseClient = axios.create({
   baseURL,
@@ -70,7 +70,7 @@ function HomeClient({
 
       await api.post(endpointPath, {
         discordId: user.discordId,
-        networkId: "2aca5e06-c690-485c-9bd7-de92dd0f3baf",
+        networkId: "71befbc8-f285-4045-97a3-e665b4ca1a58",
         serverId: server.serverId,
         channelId: channel?.channelId,
         roleApplicableTime: invoice.roleApplicableTime,
@@ -182,7 +182,7 @@ function HomeClient({
                     loading ||
                     (balance?.value || BigInt(0)) < BigInt(paymentAmount)
                   }
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed border border-border font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-base sm:text-lg"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed border border-border font-semibold py-4 px-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-base sm:text-lg"
                 >
                   {loading ? "Processing..." : "Purchase Role"}
                 </button>

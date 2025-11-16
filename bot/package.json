@@ -10,8 +10,10 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "axios": "^1.13.2",
     "discord.js": "^14.24.2",
+    "jsonwebtoken": "^9.0.2",
     "viem": "^2.38.6",
     "x402-axios": "^0.7.0",
     "x402-fetch": "^0.7.0"

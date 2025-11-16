@@ -9,7 +9,7 @@ import { withPaymentInterceptor } from "x402-axios";
 import { useRouter } from "next/navigation";
 import { Invoice, Server, User } from "@/types/telegram";
 
-const baseURL = process.env.NEXT_PUBLIC_BASE_URL;
+const baseURL = process.env.NEXT_PUBLIC_TELEGRAM_APP_URL;
 
 const baseClient = axios.create({
   baseURL,
@@ -67,7 +67,7 @@ function HomeClient({
 
       await api.post(endpointPath, {
         telegramId: user.telegramId,
-        networkId: "afb4d567-b672-4c25-895c-2224a0e64afd",
+        networkId: "c4191e43-55ee-49ad-844a-52d50dafb28a",
         serverId: server.serverId,
         roleApplicableTime: invoice.roleApplicableTime,
         token: invoice.token,
@@ -178,7 +178,7 @@ function HomeClient({
                     loading ||
                     (balance?.value || BigInt(0)) < BigInt(paymentAmount)
                   }
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed border border-border font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-base sm:text-lg"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed border border-border font-semibold py-4 px-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-base sm:text-lg"
                 >
                   {loading ? "Processing..." : "Purchase Role"}
                 </button>

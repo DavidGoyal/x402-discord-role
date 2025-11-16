@@ -170,7 +170,7 @@ export const getMyServers = async (req: Request, res: Response) => {
 
     const servers = await prisma.server.findMany({
       where: {
-        receiverEthereumAddress: { equals: address, mode: "insensitive" },
+        ownerAddress: { equals: address, mode: "insensitive" },
       },
       include: {
         channels: {
@@ -226,7 +226,7 @@ export const getMyServerByServerId = async (req: Request, res: Response) => {
     const server = await prisma.server.findUnique({
       where: {
         serverId,
-        receiverEthereumAddress: { equals: address, mode: "insensitive" },
+        ownerAddress: { equals: address, mode: "insensitive" },
       },
       include: {
         channels: {

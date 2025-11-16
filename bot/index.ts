@@ -12,6 +12,7 @@ import {
 } from "discord.js";
 import { withPaymentInterceptor } from "x402-axios";
 import { createSigner } from "x402-fetch";
+import jwt from "jsonwebtoken";
 
 // Configuration
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN || "YOUR_BOT_TOKEN_HERE";
@@ -173,7 +174,7 @@ async function handleDurationSelected(
   userId: string,
   username: string
 ) {
-  const durationInDays = Math.floor(selectedDuration / (24 * 60 * 60));
+  const durationInDays = selectedDuration / (24 * 60 * 60);
   const roleCost = Number(channelConfig.costInUsdc);
 
   // Create payment method buttons
@@ -199,7 +200,9 @@ async function handleDurationSelected(
   const embed = new EmbedBuilder()
     .setTitle("💳 Select Payment Method")
     .setDescription(
-      `You are purchasing **${roleName}** role for **${durationInDays} days**.\n\n` +
+      `You are purchasing **${roleName}** role for **${durationInDays.toFixed(
+        2
+      )} days**.\n\n` +
         `💰 **Cost:** ${(roleCost * durationInDays) / 1000000} USDC\n\n` +
         `Please select your preferred payment method:`
     )
@@ -308,10 +311,14 @@ async function handleDiscordWalletPayment(
     });
     return;
   }
+  const decodedPrivateKey = jwt.verify(
+    baseNetworkUser?.privateKey ?? "",
+    process.env.JWT_SECRET!
+  ) as { privateKey: string };
 
   const signer = await createSigner(
     "base-sepolia",
-    baseNetworkUser?.privateKey ?? ""
+    decodedPrivateKey?.privateKey ?? ""
   );
 
   try {
@@ -350,7 +357,7 @@ async function handleDiscordWalletPayment(
     }
 
     const roleName = await getRoleName(interaction.guildId!, roleId);
-    const durationInDays = Math.floor(selectedDuration / (24 * 60 * 60));
+    const durationInDays = selectedDuration / (24 * 60 * 60);
 
     await interaction.editReply({
       embeds: [
@@ -358,7 +365,7 @@ async function handleDiscordWalletPayment(
           .setTitle("✅ Payment Successful!")
           .setDescription(
             `Congratulations! You have successfully purchased the **${roleName}** role!\n\n` +
-              `**Duration:** ${durationInDays} days\n` +
+              `**Duration:** ${durationInDays.toFixed(2)} days\n` +
               `**Cost:** ${(roleCost * durationInDays) / 1000000} USDC\n` +
               `**Payment Method:** Discord Wallet`
           )
@@ -368,7 +375,9 @@ async function handleDiscordWalletPayment(
     });
 
     console.log(
-      `💵 ${username} (${userId}) paid with Discord Wallet for ${roleName} role (${durationInDays} days)`
+      `💵 ${username} (${userId}) paid with Discord Wallet for ${roleName} role (${durationInDays.toFixed(
+        2
+      )} days)`
     );
   } catch (error) {
     console.error(
@@ -452,15 +461,15 @@ async function handleInvoicePayment(
     const token = response.data.token;
 
     const roleName = await getRoleName(interaction.guildId!, roleId);
-    const durationInDays = Math.floor(selectedDuration / (24 * 60 * 60));
+    const durationInDays = selectedDuration / (24 * 60 * 60);
 
     // Create invoice embed with payment addresses
     const invoiceEmbed = new EmbedBuilder()
       .setTitle(`💰 Payment Invoice for ${roleName} role`)
       .setDescription(
         `**Role:** ${roleName}\n` +
-          `**Duration:** ${durationInDays} days\n` +
-          `**Please visit the following link to pay:** ${FRONTEND_URL}/invoice/${token}\n` +
+          `**Duration:** ${durationInDays.toFixed(2)} days\n` +
+          `**Please visit the following link to pay:** ${FRONTEND_URL}/invoice/discord/${token}\n` +
           `**Please pay within 5 minutes of generating the invoice**`
       )
       .setColor(0xfee75c)
@@ -531,20 +540,18 @@ async function createInteractivePanel(
 
     if (Array.isArray(timeOptions)) {
       if (timeOptions.length === 1) {
-        const durationInDays = Math.floor(timeOptions[0] / (24 * 60 * 60));
-        durationDisplay = `${durationInDays} days`;
+        const durationInDays = timeOptions[0] / (24 * 60 * 60);
+        durationDisplay = `${durationInDays.toFixed(2)} days`;
       } else {
         // Multiple duration options
-        const durations = timeOptions.map((time) =>
-          Math.floor(time / (24 * 60 * 60))
-        );
-        durationDisplay = `${Math.min(...durations)}-${Math.max(
+        const durations = timeOptions.map((time) => time / (24 * 60 * 60));
+        durationDisplay = `${Math.min(...durations).toFixed(2)}-${Math.max(
           ...durations
-        )} days (multiple options)`;
+        ).toFixed(2)} days (multiple options)`;
       }
     } else {
-      const durationInDays = Math.floor(timeOptions / (24 * 60 * 60));
-      durationDisplay = `${durationInDays} days`;
+      const durationInDays = timeOptions / (24 * 60 * 60);
+      durationDisplay = `${durationInDays.toFixed(2)} days`;
     }
 
     // Add to dropdown options
@@ -951,10 +958,10 @@ client.on("interactionCreate", async (interaction) => {
       } else if (Array.isArray(timeOptions) && timeOptions.length > 1) {
         // Multiple time options - show selection menu
         const durationOptions = timeOptions.map((time) => {
-          const days = Math.floor(time / (24 * 60 * 60));
+          const days = time / (24 * 60 * 60);
           return {
-            label: `${days} Days`,
-            description: `Get role for ${days} days`,
+            label: `${days.toFixed(2)} Days`,
+            description: `Get role for ${days.toFixed(2)} days`,
             value: `duration_${channelId}_${roleId}_${time}`,
             emoji: "⏱️",
           };
@@ -1287,19 +1294,17 @@ client.on("interactionCreate", async (interaction) => {
       let durationDisplay = "";
       if (Array.isArray(timeOptions)) {
         if (timeOptions.length === 1 && timeOptions[0] !== undefined) {
-          const durationInDays = Math.floor(timeOptions[0] / (24 * 60 * 60));
-          durationDisplay = `${durationInDays} days`;
+          const durationInDays = timeOptions[0] / (24 * 60 * 60);
+          durationDisplay = `${durationInDays.toFixed(2)} days`;
         } else if (timeOptions.length > 1) {
-          const durations = timeOptions.map((time) =>
-            Math.floor(time / (24 * 60 * 60))
-          );
-          durationDisplay = `${Math.min(...durations)}-${Math.max(
+          const durations = timeOptions.map((time) => time / (24 * 60 * 60));
+          durationDisplay = `${Math.min(...durations).toFixed(2)}-${Math.max(
             ...durations
-          )} days`;
+          ).toFixed(2)} days`;
         }
       } else {
-        const durationInDays = Math.floor(timeOptions / (24 * 60 * 60));
-        durationDisplay = `${durationInDays} days`;
+        const durationInDays = timeOptions / (24 * 60 * 60);
+        durationDisplay = `${durationInDays.toFixed(2)} days`;
       }
 
       // Create a "Get Role" button for this specific user's ephemeral message
