@@ -78,6 +78,7 @@ model Channel {
 model RoleAssigned {
   id         String   @id @default(uuid())
   userId     String
+  username   String
   roleId     String
   serverId   String
   amount     BigInt

@@ -266,6 +266,8 @@ export const getMyServerByServerId = async (req: Request, res: Response) => {
       rolesAssigned: rolesAssigned.map((roleAssigned) => ({
         id: roleAssigned.id,
         userId: roleAssigned.userId,
+        username: roleAssigned.username,
+        txnLink: roleAssigned.txnLink,
         roleId: roleAssigned.roleId,
         serverId: roleAssigned.serverId,
         createdAt: roleAssigned.createdAt,

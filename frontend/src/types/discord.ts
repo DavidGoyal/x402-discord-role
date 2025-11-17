@@ -41,6 +41,8 @@ export type MyServer = {
 export type RoleAssigned = {
   userId: string;
   roleId: string;
+  username: string;
+  txnLink: string;
   serverId: string;
   createdAt: Date;
   expiryTime: Date;

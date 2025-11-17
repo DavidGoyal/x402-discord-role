@@ -4,9 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { RoleAssigned } from "@/types/telegram";
-import { Clock, Server, Shield, User, Users } from "lucide-react";
+import { ArrowRight, Clock, Server, Shield, User, Users } from "lucide-react";
 import { useAccount } from "wagmi";
 import RevenueChart from "@/components/revenue-chart";
+import Link from "next/link";
 
 export default function AdminDashboard({
   serverId,
@@ -176,6 +177,9 @@ export default function AdminDashboard({
                           Claimed
                         </th>
                         <th className="text-left p-4 text-sm font-semibold text-muted-foreground">
+                          Transaction
+                        </th>
+                        <th className="text-left p-4 text-sm font-semibold text-muted-foreground">
                           Status
                         </th>
                       </tr>
@@ -183,7 +187,7 @@ export default function AdminDashboard({
                     <tbody>
                       {rolesAssigned.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="p-12">
+                          <td colSpan={8} className="p-12">
                             <div className="flex flex-col items-center justify-center text-center">
                               <Users className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
                               <h3 className="text-lg font-semibold mb-2">
@@ -207,9 +211,14 @@ export default function AdminDashboard({
                             <td className="p-4">
                               <div className="flex items-center gap-2">
                                 <User className="h-4 w-4 text-primary" />
-                                <p className="text-xs text-muted-foreground font-mono">
-                                  {roleAssigned.userId.slice(0, 10)}...
-                                </p>
+                                <div>
+                                  <p className="text-sm">
+                                    {roleAssigned.username}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground font-mono">
+                                    {roleAssigned.userId.slice(0, 8)}...
+                                  </p>
+                                </div>
                               </div>
                             </td>
                             <td className="p-4">
@@ -257,6 +266,17 @@ export default function AdminDashboard({
                               <span className="text-sm text-muted-foreground">
                                 {formatDate(new Date(roleAssigned.createdAt))}
                               </span>
+                            </td>
+                            <td className="p-4">
+                              <Link
+                                href={`https://sepolia.basescan.org/tx/${roleAssigned.txnLink}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-primary hover:underline"
+                              >
+                                View Transaction
+                                <ArrowRight className="h-4 w-4 ml-2" />
+                              </Link>
                             </td>
                             <td className="p-4">
                               {roleAssigned.active ? (

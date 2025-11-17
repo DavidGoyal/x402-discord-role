@@ -355,6 +355,7 @@ export const getAccess = async (req: Request, res: Response) => {
         await prisma.roleAssigned.create({
           data: {
             userId,
+            username: user.discordUsername,
             serverId,
             roleId: roleId!,
             expiryTime: new Date(Date.now() + roleApplicableTime * 1000),
