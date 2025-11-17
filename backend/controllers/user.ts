@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "../prisma/prisma.js";
 import { createNetworkUser, getBalance } from "../utils/user.js";
+import { botClient } from "../constants/constants.js";
 
 export const getUserByDiscordId = async (req: Request, res: Response) => {
   try {
@@ -20,8 +21,27 @@ export const getUserByDiscordId = async (req: Request, res: Response) => {
     ]);
 
     if (!user) {
+      const token = process.env.DISCORD_TOKEN;
+      if (!token) {
+        return res
+          .status(400)
+          .json({ success: false, error: "Discord token is required" });
+      }
+
+      if (!botClient.isReady()) {
+        await botClient.login(token);
+      }
+
+      const discordUser = await botClient.users.fetch(discordId);
+      if (!discordUser) {
+        return res.status(404).json({
+          success: false,
+          error: "Discord user not found",
+        });
+      }
+
       user = await prisma.user.create({
-        data: { discordId },
+        data: { discordId, discordUsername: discordUser.username },
       });
     }
 

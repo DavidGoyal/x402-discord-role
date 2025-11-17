@@ -359,6 +359,8 @@ export const getAccess = async (req: Request, res: Response) => {
             roleId: roleId!,
             expiryTime: new Date(Date.now() + roleApplicableTime * 1000),
             channelId: server.channels[0]?.id!,
+            amount: totalCost,
+            txnLink: settleResponse.transaction,
           },
         });
 
@@ -453,9 +455,18 @@ export const createInvoice = async (req: Request, res: Response) => {
       },
     });
     if (!user) {
+      const discordUser = await botClient.users.fetch(discordId);
+      if (!discordUser) {
+        return res.status(404).json({
+          success: false,
+          error: "Discord user not found",
+        });
+      }
+
       const newUser = await prisma.user.create({
         data: {
           discordId,
+          discordUsername: discordUser.username,
         },
       });
 

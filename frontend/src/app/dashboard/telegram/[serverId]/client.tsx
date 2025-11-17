@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { RoleAssigned } from "@/types/telegram";
 import { Clock, Server, Shield, User, Users } from "lucide-react";
 import { useAccount } from "wagmi";
+import RevenueChart from "@/components/revenue-chart";
 
 export default function AdminDashboard({
   serverId,
@@ -112,6 +113,11 @@ export default function AdminDashboard({
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* Revenue Chart */}
+        {isConnected && rolesAssigned.length > 0 && (
+          <RevenueChart serverId={serverId} isDiscord={false} />
         )}
 
         {/* User Claims Section */}

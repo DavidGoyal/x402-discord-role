@@ -14,11 +14,12 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(uuid())
-  discordId    String        @unique
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  networkUsers NetworkUser[]
+  id              String        @id @default(uuid())
+  discordUsername String
+  discordId       String        @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  networkUsers    NetworkUser[]
 
   @@index([discordId])
 }
@@ -79,10 +80,12 @@ model RoleAssigned {
   userId     String
   roleId     String
   serverId   String
+  amount     BigInt
   expiryTime DateTime
   channelId  String
   channel    Channel  @relation(fields: [channelId], references: [id])
   createdAt  DateTime @default(now())
+  txnLink    String
   active     Boolean  @default(true)
 
   @@index([expiryTime])
