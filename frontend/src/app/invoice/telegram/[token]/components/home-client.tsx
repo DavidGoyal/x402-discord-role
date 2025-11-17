@@ -67,7 +67,7 @@ function HomeClient({
 
       await api.post(endpointPath, {
         telegramId: user.telegramId,
-        networkId: "c4191e43-55ee-49ad-844a-52d50dafb28a",
+        networkId: "21a21419-8498-42aa-8c11-57a8de00437a",
         serverId: server.serverId,
         roleApplicableTime: invoice.roleApplicableTime,
         token: invoice.token,

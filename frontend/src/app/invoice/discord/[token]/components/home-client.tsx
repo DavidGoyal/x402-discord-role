@@ -70,7 +70,7 @@ function HomeClient({
 
       await api.post(endpointPath, {
         discordId: user.discordId,
-        networkId: "71befbc8-f285-4045-97a3-e665b4ca1a58",
+        networkId: "c9867385-02b6-451a-a068-8ba2e527bedd",
         serverId: server.serverId,
         channelId: channel?.channelId,
         roleApplicableTime: invoice.roleApplicableTime,
