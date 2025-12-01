@@ -54,7 +54,7 @@ export default async function Page({
 
   const [user, server] = await Promise.all([
     getUser(invoice?.userId),
-    getServer(invoice?.serverId),
+    getServer(invoice?.serverTelegramId),
   ]);
 
   if (!user || !server) {

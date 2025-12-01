@@ -3,9 +3,10 @@ export type Invoice = {
   userId: string;
   serverId: string;
   roleId: string;
+  serverDiscordId: string;
   roleApplicableTime: number;
   token: string;
-  expiresAt: Date;
+  expiresOn: Date;
 };
 
 export type User = {
@@ -15,42 +16,42 @@ export type User = {
 
 export type Server = {
   id: string;
-  serverId: string;
+  serverDiscordId: string;
+  serverName: string;
   receiverSolanaAddress: string;
   receiverEthereumAddress: string;
   defaultChannelId: string;
-  channels: Channel[];
+  roles: Role[];
 };
 
-export type Channel = {
+export type Role = {
   id: string;
-  channelId: string;
+  roleDiscordId: string;
+  roleName: string;
   costInUsdc: string;
-  roleId: string;
   roleApplicableTime: number;
 };
 
 export type MyServer = {
   id: string;
-  serverId: string;
+  serverDiscordId: string;
   serverName: string;
-  channelCount: number;
+  roleCount: number;
   walletAddresses: string;
 };
 
 export type RoleAssigned = {
   userId: string;
-  roleId: string;
+  roleDiscordId: string;
   username: string;
   txnLink: string;
-  serverId: string;
+  serverDiscordId: string;
   createdAt: Date;
-  expiryTime: Date;
+  expiresOn: Date;
   active: boolean;
-  channel: {
+  role: {
     roleName: string;
     roleApplicableTime: number;
-    channelName: string;
     costInUsdc: string;
   };
 };

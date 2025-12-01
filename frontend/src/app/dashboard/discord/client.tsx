@@ -85,7 +85,7 @@ export default function AdminDashboard({ servers }: { servers: MyServer[] }) {
                           Name
                         </th>
                         <th className="text-left p-4 text-sm font-semibold text-muted-foreground">
-                          Channels Configured
+                          Roles Configured
                         </th>
                         <th className="text-left p-4 text-sm font-semibold text-muted-foreground">
                           Receiver Address
@@ -99,7 +99,9 @@ export default function AdminDashboard({ servers }: { servers: MyServer[] }) {
                             "border-b border-border transition-colors hover:bg-muted/50 cursor-pointer"
                           )}
                           key={server.id}
-                          onClick={() => handleServerClick(server.serverId)}
+                          onClick={() =>
+                            handleServerClick(server.serverDiscordId)
+                          }
                         >
                           <td className="p-4">
                             <div className="flex items-center gap-2">
@@ -115,7 +117,7 @@ export default function AdminDashboard({ servers }: { servers: MyServer[] }) {
                           <td className="p-4">
                             <div className="flex items-center gap-2">
                               <Server className="h-4 w-4 text-muted-foreground" />
-                              <p className="text-sm">{server.channelCount}</p>
+                              <p className="text-sm">{server.roleCount}</p>
                             </div>
                           </td>
                           <td className="p-4">

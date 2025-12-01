@@ -27,9 +27,7 @@ function HomeClient({
   user: User;
   server: Server;
 }) {
-  const channel = server.channels.find(
-    (channel) => channel.roleId === invoice.roleId
-  );
+  const role = server.roles.find((role) => role.id === invoice.roleId);
   const router = useRouter();
 
   const { address, isConnected } = useAccount();
@@ -41,7 +39,7 @@ function HomeClient({
   const [loading, setLoading] = useState(false);
 
   const paymentAmount =
-    (Number(channel?.costInUsdc) * invoice.roleApplicableTime) / 86400;
+    (Number(role?.costInUsdc) * invoice.roleApplicableTime) / 86400;
 
   const handlePay = async () => {
     setLoading(true);
@@ -70,9 +68,9 @@ function HomeClient({
 
       await api.post(endpointPath, {
         discordId: user.discordId,
-        networkId: "c9867385-02b6-451a-a068-8ba2e527bedd",
-        serverId: server.serverId,
-        channelId: channel?.channelId,
+        networkId: "ee922704-fd09-43e3-9135-0f747ed56caa",
+        serverId: server.id,
+        roleId: role?.id,
         roleApplicableTime: invoice.roleApplicableTime,
         token: invoice.token,
       });

@@ -49,47 +49,46 @@ model NetworkUser {
 }
 
 model Server {
-  id                      String    @id @default(uuid())
-  serverId                String    @unique
+  id                      String   @id @default(uuid())
+  serverId                String   @unique
   ownerAddress            String
   name                    String
   defaultChannelId        String
   receiverSolanaAddress   String
   receiverEthereumAddress String
-  channels                Channel[]
+  expiresOn               DateTime @default(now())
+  numberOfTxns            BigInt   @default(0)
+  roles                   Role[]
 
   @@index([serverId])
   @@index([ownerAddress])
 }
 
-model Channel {
+model Role {
   id                 String         @id @default(uuid())
-  channelId          String         @unique
   serverId           String
   costInUsdc         BigInt
   roleId             String
   roleName           String
-  channelName        String
   roleApplicableTime Int[]
   server             Server         @relation(fields: [serverId], references: [id])
   roleAssigneds      RoleAssigned[]
 }
 
 model RoleAssigned {
-  id         String   @id @default(uuid())
-  userId     String
-  username   String
-  roleId     String
-  serverId   String
-  amount     BigInt
-  expiryTime DateTime
-  channelId  String
-  channel    Channel  @relation(fields: [channelId], references: [id])
-  createdAt  DateTime @default(now())
-  txnLink    String
-  active     Boolean  @default(true)
+  id        String   @id @default(uuid())
+  userId    String
+  username  String
+  roleId    String
+  serverId  String
+  amount    BigInt
+  expiresOn DateTime
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now())
+  txnLink   String
+  active    Boolean  @default(true)
 
-  @@index([expiryTime])
+  @@index([expiresOn])
 }
 
 model Invoice {

@@ -2,9 +2,10 @@ export type Invoice = {
   id: string;
   userId: string;
   serverId: string;
+  serverTelegramId: string;
   roleApplicableTime: number;
   token: string;
-  expiresAt: Date;
+  expiresOn: Date;
 };
 
 export type User = {
@@ -14,7 +15,7 @@ export type User = {
 
 export type Server = {
   id: string;
-  serverId: string;
+  serverTelegramId: string;
   receiverSolanaAddress: string;
   receiverEthereumAddress: string;
   costInUsdc: string;
@@ -22,7 +23,7 @@ export type Server = {
 
 export type MyServer = {
   id: string;
-  serverId: string;
+  serverTelegramId: string;
   serverName: string;
   walletAddresses: string;
 };
@@ -33,6 +34,6 @@ export type RoleAssigned = {
   txnLink: string;
   serverId: string;
   createdAt: Date;
-  expiryTime: Date;
+  expiresOn: Date;
   active: boolean;
 };

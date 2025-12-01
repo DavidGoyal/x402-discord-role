@@ -96,7 +96,9 @@ export default function AdminDashboard({ servers }: { servers: MyServer[] }) {
                             "border-b border-border transition-colors hover:bg-muted/50 cursor-pointer"
                           )}
                           key={server.id}
-                          onClick={() => handleServerClick(server.serverId)}
+                          onClick={() =>
+                            handleServerClick(server.serverTelegramId)
+                          }
                         >
                           <td className="p-4">
                             <div className="flex items-center gap-2">

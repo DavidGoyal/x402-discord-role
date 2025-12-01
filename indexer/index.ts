@@ -18,7 +18,7 @@ async function main() {
 
     const roleAssignedUsers = await prisma.roleAssigned.findMany({
       where: {
-        expiryTime: {
+        expiresOn: {
           lt: new Date(),
         },
         active: true,

@@ -165,7 +165,7 @@ export const getAccess = async (req: Request, res: Response) => {
       discordId,
       networkId,
       serverId,
-      channelId,
+      roleId,
       roleApplicableTime,
       token,
     } = req.body;
@@ -173,13 +173,13 @@ export const getAccess = async (req: Request, res: Response) => {
       !discordId ||
       !networkId ||
       !serverId ||
-      !channelId ||
+      !roleId ||
       !roleApplicableTime
     ) {
       return res.status(400).json({
         success: false,
         error:
-          "Discord ID, network ID, server ID, channel ID and role applicable time are required",
+          "Discord ID, network ID, server ID, role ID and role applicable time are required",
       });
     }
 
@@ -196,11 +196,11 @@ export const getAccess = async (req: Request, res: Response) => {
 
     const [server, network, user] = await Promise.all([
       prisma.server.findUnique({
-        where: { serverId },
+        where: { id: serverId },
         include: {
-          channels: {
+          roles: {
             where: {
-              channelId,
+              id: roleId,
             },
           },
         },
@@ -218,10 +218,10 @@ export const getAccess = async (req: Request, res: Response) => {
       }),
     ]);
 
-    if (!server || server.channels.length === 0) {
+    if (!server || server.roles.length === 0) {
       return res
         .status(404)
-        .json({ success: false, error: "Server not found" });
+        .json({ success: false, error: "Server or role not found" });
     }
 
     if (!network) {
@@ -236,9 +236,22 @@ export const getAccess = async (req: Request, res: Response) => {
         .json({ success: false, error: "Insufficient Balance" });
     }
 
+    if (server.expiresOn < new Date()) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Server subscription has expired" });
+    }
+
+    if (server.numberOfTxns <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Server subscription has reached the maximum number of txns",
+      });
+    }
+
     if (
-      server.channels[0]?.roleApplicableTime &&
-      !server.channels[0]?.roleApplicableTime?.includes(roleApplicableTime)
+      server.roles[0]?.roleApplicableTime &&
+      !server.roles[0]?.roleApplicableTime?.includes(roleApplicableTime)
     ) {
       return res
         .status(400)
@@ -246,13 +259,13 @@ export const getAccess = async (req: Request, res: Response) => {
     }
 
     const totalCost =
-      (Number(server.channels[0]?.costInUsdc) * roleApplicableTime) / 86400;
+      (Number(server.roles[0]?.costInUsdc) * roleApplicableTime) / 86400;
 
     if (token) {
       const invoice = await prisma.invoice.findUnique({
         where: {
           token,
-          expiresAt: { gt: new Date() },
+          expiresOn: { gt: new Date() },
         },
       });
       if (!invoice) {
@@ -262,9 +275,9 @@ export const getAccess = async (req: Request, res: Response) => {
       }
       if (
         invoice.roleApplicableTime !== roleApplicableTime ||
-        invoice.roleId !== server.channels[0]?.roleId ||
+        invoice.roleId !== roleId ||
         invoice.userId !== user.id ||
-        invoice.serverId !== server.serverId
+        invoice.serverId !== server.id
       ) {
         return res.status(400).json({
           success: false,
@@ -284,11 +297,12 @@ export const getAccess = async (req: Request, res: Response) => {
       }
     }
     const userId = user.discordId;
-    const roleId = server.channels[0]?.roleId;
 
     const [member, role] = await Promise.all([
-      botClient.guilds.cache.get(serverId)?.members.fetch(userId),
-      botClient.guilds.cache.get(serverId)?.roles.fetch(roleId!),
+      botClient.guilds.cache.get(server.serverDiscordId)?.members.fetch(userId),
+      botClient.guilds.cache
+        .get(server.serverDiscordId)
+        ?.roles.fetch(server.roles[0]?.roleDiscordId!),
     ]);
 
     if (!member) {
@@ -319,21 +333,32 @@ export const getAccess = async (req: Request, res: Response) => {
       ];
       res.setHeader("content-type", "application/json");
 
+      const isValid = await verifyPayment(req, res, paymentRequirements);
+      if (!isValid) {
+        console.error("Payment verification failed");
+        res.status(402).json({
+          x402Version,
+          error: "Payment verification failed",
+          accepts: paymentRequirements,
+        });
+        return;
+      }
+
       try {
-        const isValid = await verifyPayment(req, res, paymentRequirements);
-        if (!isValid) {
-          console.error("Payment verification failed");
-          res.status(402).json({
-            x402Version,
-            error: "Payment verification failed",
-            accepts: paymentRequirements,
-          });
-          return;
-        }
+        const decodedPayment = exact.evm.decodePayment(
+          req.header("X-PAYMENT")!
+        );
+
+        // Find the matching payment requirement
+        const selectedPaymentRequirement =
+          findMatchingPaymentRequirements(
+            paymentRequirements,
+            decodedPayment
+          ) || paymentRequirements[0];
 
         const settleResponse = await settle(
-          exact.evm.decodePayment(req.header("X-PAYMENT")!),
-          paymentRequirements[0]!
+          decodedPayment,
+          selectedPaymentRequirement!
         );
 
         if (!settleResponse.success) {
@@ -356,10 +381,9 @@ export const getAccess = async (req: Request, res: Response) => {
           data: {
             userId,
             username: user.discordUsername,
-            serverId,
+            serverId: server.id,
             roleId: roleId!,
-            expiryTime: new Date(Date.now() + roleApplicableTime * 1000),
-            channelId: server.channels[0]?.id!,
+            expiresOn: new Date(Date.now() + roleApplicableTime * 1000),
             amount: totalCost,
             txnLink: settleResponse.transaction,
           },
@@ -369,7 +393,7 @@ export const getAccess = async (req: Request, res: Response) => {
           const invoice = await prisma.invoice.findUnique({
             where: {
               token,
-              expiresAt: { gt: new Date() },
+              expiresOn: { gt: new Date() },
             },
           });
           if (invoice) {
@@ -388,6 +412,7 @@ export const getAccess = async (req: Request, res: Response) => {
           error,
           accepts: paymentRequirements,
         });
+        return;
       }
     }
   } catch (error) {
@@ -399,12 +424,12 @@ export const getAccess = async (req: Request, res: Response) => {
 
 export const createInvoice = async (req: Request, res: Response) => {
   try {
-    const { discordId, serverId, channelId, roleApplicableTime } = req.body;
-    if (!discordId || !serverId || !channelId || !roleApplicableTime) {
+    const { discordId, serverId, roleId, roleApplicableTime } = req.body;
+    if (!discordId || !serverId || !roleId || !roleApplicableTime) {
       return res.status(400).json({
         success: false,
         error:
-          "Discord ID, network ID, server ID, channel ID and role applicable time are required",
+          "Discord ID, network ID, server ID, role ID and role applicable time are required",
       });
     }
 
@@ -421,11 +446,11 @@ export const createInvoice = async (req: Request, res: Response) => {
 
     const [server, network] = await Promise.all([
       prisma.server.findUnique({
-        where: { serverId },
+        where: { id: serverId },
         include: {
-          channels: {
+          roles: {
             where: {
-              channelId,
+              id: roleId,
             },
           },
         },
@@ -435,16 +460,29 @@ export const createInvoice = async (req: Request, res: Response) => {
       }),
     ]);
 
-    if (!server || server.channels.length === 0) {
+    if (!server || server.roles.length === 0) {
       return res
         .status(404)
-        .json({ success: false, error: "Server not found" });
+        .json({ success: false, error: "Server or role not found" });
     }
 
     if (!network) {
       return res
         .status(404)
         .json({ success: false, error: "Network not found" });
+    }
+
+    if (server.expiresOn < new Date()) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Server subscription has expired" });
+    }
+
+    if (server.numberOfTxns <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Server subscription has reached the maximum number of txns",
+      });
     }
 
     let user = await prisma.user.findUnique({
@@ -494,8 +532,8 @@ export const createInvoice = async (req: Request, res: Response) => {
     }
 
     if (
-      server.channels[0]?.roleApplicableTime &&
-      !server.channels[0]?.roleApplicableTime?.includes(roleApplicableTime)
+      server.roles[0]?.roleApplicableTime &&
+      !server.roles[0]?.roleApplicableTime?.includes(roleApplicableTime)
     ) {
       return res
         .status(400)
@@ -503,11 +541,14 @@ export const createInvoice = async (req: Request, res: Response) => {
     }
 
     const userId = user!.id;
-    const roleId = server.channels[0]?.roleId;
 
     const [member, role] = await Promise.all([
-      botClient.guilds.cache.get(serverId)?.members.fetch(discordId),
-      botClient.guilds.cache.get(serverId)?.roles.fetch(roleId!),
+      botClient.guilds.cache
+        .get(server.serverDiscordId)
+        ?.members.fetch(discordId),
+      botClient.guilds.cache
+        .get(server.serverDiscordId)
+        ?.roles.fetch(server.roles[0]?.roleDiscordId!),
     ]);
 
     if (!member) {
@@ -523,7 +564,7 @@ export const createInvoice = async (req: Request, res: Response) => {
     const invoice = await prisma.invoice.upsert({
       where: {
         userId_serverId_roleId: {
-          serverId,
+          serverId: server.id,
           roleId: roleId!,
           userId,
         },
@@ -531,15 +572,15 @@ export const createInvoice = async (req: Request, res: Response) => {
       update: {
         token: uuidv4(),
         roleApplicableTime,
-        expiresAt: new Date(Date.now() + 60 * 1000),
+        expiresOn: new Date(Date.now() + 60 * 1000),
       },
       create: {
         userId,
-        serverId,
+        serverId: server.id,
         roleId: roleId!,
         roleApplicableTime,
         token: uuidv4(),
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        expiresOn: new Date(Date.now() + 5 * 60 * 1000),
       },
     });
 
@@ -562,7 +603,7 @@ export const getInvoice = async (req: Request, res: Response) => {
     }
 
     const invoice = await prisma.invoice.findUnique({
-      where: { token: token as string, expiresAt: { gt: new Date() } },
+      where: { token: token as string, expiresOn: { gt: new Date() } },
     });
 
     if (!invoice) {
@@ -571,7 +612,25 @@ export const getInvoice = async (req: Request, res: Response) => {
         .json({ success: false, error: "Invoice not found" });
     }
 
-    res.status(200).json({ success: true, invoice });
+    const server = await prisma.server.findUnique({
+      where: { id: invoice.serverId },
+      select: {
+        serverDiscordId: true,
+      },
+    });
+    if (!server) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Server not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      invoice: {
+        ...invoice,
+        serverDiscordId: server.serverDiscordId,
+      },
+    });
     return;
   } catch (error) {
     console.error(error);

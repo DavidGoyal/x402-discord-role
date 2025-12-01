@@ -16,38 +16,30 @@ import jwt from "jsonwebtoken";
 
 // Configuration
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN || "YOUR_BOT_TOKEN_HERE";
-const BACKEND_URL =
-  process.env.BACKEND_URL || "https://x402-discord-role-ptlz.vercel.app";
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://x402-role.vercel.app";
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3001";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 // Types for backend responses
-interface ChannelConfig {
+interface RoleConfig {
   id: string;
-  channelId: string;
-  serverId: string;
-  defaultChannelId: string;
   costInUsdc: string;
-  roleId: string;
+  roleDiscordId: string;
+  roleName: string;
   roleApplicableTime: number[];
-  server?: {
-    serverId: string;
-    receiverSolanaAddress: string;
-    receiverEthereumAddress: string;
-  };
 }
 
 interface ServerConfig {
   id: string;
-  serverId: string;
+  serverDiscordId: string;
   defaultChannelId: string;
   receiverSolanaAddress: string;
   receiverEthereumAddress: string;
-  channelCount: number;
-  channels: Array<{
+  roleCount: number;
+  roles: Array<{
     id: string;
-    channelId: string;
     costInUsdc: bigint;
-    roleId: string;
+    roleDiscordId: string;
+    roleName: string;
     roleApplicableTime: number;
   }>;
 }
@@ -94,29 +86,27 @@ async function fetchUserInfo(discordId: string): Promise<{
     return { networkUsers: [] };
   }
 }
-// Helper function to fetch channel configuration from backend
-async function fetchChannelConfig(
-  channelId: string
-): Promise<ChannelConfig | null> {
+// Helper function to fetch role configuration from backend
+async function fetchRoleConfig(roleId: string): Promise<RoleConfig | null> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/channel/${channelId}`, {
+    const response = await fetch(`${BACKEND_URL}/api/role/${roleId}`, {
       headers: {
         Authorization: `Bearer ${process.env.BACKEND_API_KEY}`,
       },
     });
 
     if (!response.ok) {
-      console.log(`Channel ${channelId} not configured in backend`);
+      console.log(`Role ${roleId} not configured in backend`);
       return null;
     }
 
     const data = (await response.json()) as {
       success: boolean;
-      channel: ChannelConfig;
+      role: RoleConfig;
     };
-    return data.success ? data.channel : null;
+    return data.success ? data.role : null;
   } catch (error) {
-    console.error("Error fetching channel config:", error);
+    console.error("Error fetching role config:", error);
     return null;
   }
 }
@@ -148,46 +138,28 @@ async function fetchServerConfig(
   }
 }
 
-// Helper function to get role name from guild
-async function getRoleName(
-  guildId: string,
-  roleId: string
-): Promise<string | null> {
-  try {
-    const guild = await client.guilds.fetch(guildId);
-    const role = await guild.roles.fetch(roleId);
-    return role ? role.name : null;
-  } catch (error) {
-    console.error("Error fetching role:", error);
-    return null;
-  }
-}
-
 // Handle duration selection and show payment options
 async function handleDurationSelected(
   interaction: any,
-  channelId: string,
   roleId: string,
   roleName: string,
-  channelConfig: ChannelConfig,
+  roleConfig: RoleConfig,
   selectedDuration: number,
   userId: string,
   username: string
 ) {
   const durationInDays = selectedDuration / (24 * 60 * 60);
-  const roleCost = Number(channelConfig.costInUsdc);
+  const roleCost = Number(roleConfig.costInUsdc);
 
   // Create payment method buttons
   const discordWalletButton = new ButtonBuilder()
-    .setCustomId(
-      `pay_with_discord_wallet_${channelId}_${roleId}_${selectedDuration}`
-    )
+    .setCustomId(`pay_with_discord_wallet_${roleId}_${selectedDuration}`)
     .setLabel("Pay with Discord Wallet")
     .setEmoji("💵")
     .setStyle(ButtonStyle.Success);
 
   const invoiceButton = new ButtonBuilder()
-    .setCustomId(`pay_with_invoice_${channelId}_${roleId}_${selectedDuration}`)
+    .setCustomId(`pay_with_invoice_${roleId}_${selectedDuration}`)
     .setLabel("Pay with Invoice")
     .setEmoji("💰")
     .setStyle(ButtonStyle.Primary);
@@ -243,7 +215,6 @@ async function handleDurationSelected(
 // Handle Discord wallet payment
 async function handleDiscordWalletPayment(
   interaction: any,
-  channelId: string,
   roleId: string,
   selectedDuration: number,
   userId: string,
@@ -263,21 +234,21 @@ async function handleDiscordWalletPayment(
     return;
   }
 
-  // Fetch channel config
-  const channelConfig = await fetchChannelConfig(channelId);
-  if (!channelConfig) {
+  // Fetch role config
+  const roleConfig = await fetchRoleConfig(roleId);
+  if (!roleConfig) {
     await interaction.editReply({
       embeds: [
         new EmbedBuilder()
           .setTitle("❌ Error")
-          .setDescription("Channel configuration not found.")
+          .setDescription("Role configuration not found.")
           .setColor(0xed4245),
       ],
     });
     return;
   }
 
-  const roleCost = Number(channelConfig.costInUsdc);
+  const roleCost = Number(roleConfig.costInUsdc);
   const baseNetworkUser = userInfo.networkUsers.find(
     (user) => user.networkName === "base-sepolia"
   );
@@ -333,8 +304,8 @@ async function handleDiscordWalletPayment(
       {
         discordId: userId,
         networkId: baseNetworkUser?.networkId,
-        serverId: serverConfig.serverId,
-        channelId: channelId,
+        serverId: serverConfig.id,
+        roleId: roleConfig.id,
         roleApplicableTime: selectedDuration,
       },
       {
@@ -356,7 +327,6 @@ async function handleDiscordWalletPayment(
       return;
     }
 
-    const roleName = await getRoleName(interaction.guildId!, roleId);
     const durationInDays = selectedDuration / (24 * 60 * 60);
 
     await interaction.editReply({
@@ -364,7 +334,7 @@ async function handleDiscordWalletPayment(
         new EmbedBuilder()
           .setTitle("✅ Payment Successful!")
           .setDescription(
-            `Congratulations! You have successfully purchased the **${roleName}** role!\n\n` +
+            `Congratulations! You have successfully purchased the **${roleConfig.roleName}** role!\n\n` +
               `**Duration:** ${durationInDays.toFixed(2)} days\n` +
               `**Cost:** ${(roleCost * durationInDays) / 1000000} USDC\n` +
               `**Payment Method:** Discord Wallet`
@@ -375,9 +345,9 @@ async function handleDiscordWalletPayment(
     });
 
     console.log(
-      `💵 ${username} (${userId}) paid with Discord Wallet for ${roleName} role (${durationInDays.toFixed(
-        2
-      )} days)`
+      `💵 ${username} (${userId}) paid with Discord Wallet for ${
+        roleConfig.roleName
+      } role (${durationInDays.toFixed(2)} days)`
     );
   } catch (error) {
     console.error(
@@ -399,7 +369,6 @@ async function handleDiscordWalletPayment(
 // Handle invoice payment
 async function handleInvoicePayment(
   interaction: any,
-  channelId: string,
   roleId: string,
   selectedDuration: number,
   userId: string,
@@ -417,14 +386,14 @@ async function handleInvoicePayment(
     return;
   }
 
-  // Fetch channel config
-  const channelConfig = await fetchChannelConfig(channelId);
-  if (!channelConfig) {
+  // Fetch role config
+  const roleConfig = await fetchRoleConfig(roleId);
+  if (!roleConfig) {
     await interaction.editReply({
       embeds: [
         new EmbedBuilder()
           .setTitle("❌ Error")
-          .setDescription("Channel configuration not found.")
+          .setDescription("Role configuration not found.")
           .setColor(0xed4245),
       ],
     });
@@ -436,8 +405,8 @@ async function handleInvoicePayment(
       `${BACKEND_URL}/api/user/invoice`,
       {
         discordId: userId,
-        serverId: serverConfig.serverId,
-        channelId: channelId,
+        serverId: serverConfig.id,
+        roleId: roleConfig.id,
         roleApplicableTime: selectedDuration,
       },
       {
@@ -460,14 +429,13 @@ async function handleInvoicePayment(
     }
     const token = response.data.token;
 
-    const roleName = await getRoleName(interaction.guildId!, roleId);
     const durationInDays = selectedDuration / (24 * 60 * 60);
 
     // Create invoice embed with payment addresses
     const invoiceEmbed = new EmbedBuilder()
-      .setTitle(`💰 Payment Invoice for ${roleName} role`)
+      .setTitle(`💰 Payment Invoice for ${roleConfig.roleName} role`)
       .setDescription(
-        `**Role:** ${roleName}\n` +
+        `**Role:** ${roleConfig.roleName}\n` +
           `**Duration:** ${durationInDays.toFixed(2)} days\n` +
           `**Please visit the following link to pay:** ${FRONTEND_URL}/invoice/discord/${token}\n` +
           `**Please pay within 5 minutes of generating the invoice**`
@@ -506,13 +474,13 @@ async function createInteractivePanel(
   } catch (error) {
     console.error("Error deleting messages:", error);
   }
-  if (serverConfig.channels.length === 0) {
+  if (serverConfig.roles.length === 0) {
     await channel.send({
       embeds: [
         new EmbedBuilder()
-          .setTitle("❌ No Channels Configured")
+          .setTitle("❌ No Roles Configured")
           .setDescription(
-            "No channels have been configured with roles yet. Please contact an administrator."
+            "No roles have been configured yet. Please contact an administrator."
           )
           .setColor(0xed4245),
       ],
@@ -520,23 +488,16 @@ async function createInteractivePanel(
     return;
   }
 
-  // Build dropdown options from all configured channels
+  // Build dropdown options from all configured roles
   const roleOptions = [];
   let embedDescription = "**Available Roles:**\n\n";
 
-  for (const channelConfig of serverConfig.channels) {
-    const roleName = await getRoleName(channel.guildId!, channelConfig.roleId);
-
-    if (!roleName) {
-      console.log(`⚠️  Role ${channelConfig.roleId} not found, skipping`);
-      continue;
-    }
-
-    const costInUsdc = Number(channelConfig.costInUsdc);
+  for (const roleConfig of serverConfig.roles) {
+    const costInUsdc = Number(roleConfig.costInUsdc);
 
     // Handle roleApplicableTime as array or single number
     let durationDisplay = "";
-    const timeOptions = channelConfig.roleApplicableTime;
+    const timeOptions = roleConfig.roleApplicableTime;
 
     if (Array.isArray(timeOptions)) {
       if (timeOptions.length === 1) {
@@ -556,14 +517,14 @@ async function createInteractivePanel(
 
     // Add to dropdown options
     roleOptions.push({
-      label: roleName,
+      label: roleConfig.roleName,
       description: `${costInUsdc / 1000000} USDC for ${durationDisplay}`,
-      value: `${channelConfig.channelId}_${channelConfig.roleId}`,
+      value: `${roleConfig.roleDiscordId}`,
       emoji: "🎭",
     });
 
     // Add to embed description
-    embedDescription += `🎭 **${roleName}**\n`;
+    embedDescription += `🎭 **${roleConfig.roleName}**\n`;
     embedDescription += `   💰 Cost: ${costInUsdc / 1000000} USDC\n`;
     embedDescription += `   ⏱️ Duration: ${durationDisplay}\n\n`;
   }
@@ -628,7 +589,7 @@ async function createInteractivePanel(
 
   // Create dropdown menu with ALL configured roles
   const roleSelect = new StringSelectMenuBuilder()
-    .setCustomId(`role_select_${serverConfig.serverId}`)
+    .setCustomId(`role_select_${serverConfig.serverDiscordId}`)
     .setPlaceholder("🛒 Select a role to purchase")
     .addOptions(roleOptions);
 
@@ -676,10 +637,10 @@ async function fetchAllServers(): Promise<ServerConfig[]> {
 async function sendPanelToDefaultChannel(server: ServerConfig) {
   try {
     // Find the guild (Discord server)
-    const guild = client.guilds.cache.get(server.serverId);
+    const guild = client.guilds.cache.get(server.serverDiscordId);
 
     if (!guild) {
-      console.log(`⚠️  Bot is not in server ${server.serverId}`);
+      console.log(`⚠️  Bot is not in server ${server.serverDiscordId}`);
       return;
     }
 
@@ -698,7 +659,7 @@ async function sendPanelToDefaultChannel(server: ServerConfig) {
     console.log(`✅ Panel sent to default channel in ${guild.name}`);
   } catch (error) {
     console.error(
-      `❌ Error sending panel to server ${server.serverId}:`,
+      `❌ Error sending panel to server ${server.serverDiscordId}:`,
       error
     );
   }
@@ -715,7 +676,7 @@ client.once("clientReady", async () => {
 
   if (servers.length === 0) {
     console.log("⚠️  No servers configured in backend");
-    console.log("💡 Use the backend API to configure servers and channels");
+    console.log("💡 Use the backend API to configure servers and roles");
     return;
   }
 
@@ -897,9 +858,9 @@ client.on("interactionCreate", async (interaction) => {
         return;
       }
 
-      const [channelId, roleId] = roleData.split("_");
+      const roleId = roleData;
 
-      if (!roleId || !channelId) {
+      if (!roleId) {
         await interaction.editReply({
           embeds: [
             new EmbedBuilder()
@@ -911,8 +872,8 @@ client.on("interactionCreate", async (interaction) => {
         return;
       }
 
-      // Fetch channel config to get role details
-      const channelConfig = await fetchChannelConfig(channelId);
+      // Fetch role config to get role details
+      const roleConfig = await fetchRoleConfig(roleId);
 
       if (!interaction.guildId) {
         await interaction.editReply({
@@ -926,9 +887,7 @@ client.on("interactionCreate", async (interaction) => {
         return;
       }
 
-      const roleName = await getRoleName(interaction.guildId, roleId);
-
-      if (!channelConfig || !roleName) {
+      if (!roleConfig) {
         await interaction.editReply({
           embeds: [
             new EmbedBuilder()
@@ -941,16 +900,15 @@ client.on("interactionCreate", async (interaction) => {
       }
 
       // Check if there are multiple time options
-      const timeOptions = channelConfig.roleApplicableTime;
+      const timeOptions = roleConfig.roleApplicableTime;
 
       if (typeof timeOptions === "number") {
         // Single time option - convert to array for consistent handling
         await handleDurationSelected(
           interaction,
-          channelId,
           roleId,
-          roleName,
-          channelConfig,
+          roleConfig.roleName,
+          roleConfig,
           timeOptions,
           userId,
           username
@@ -962,13 +920,13 @@ client.on("interactionCreate", async (interaction) => {
           return {
             label: `${days.toFixed(2)} Days`,
             description: `Get role for ${days.toFixed(2)} days`,
-            value: `duration_${channelId}_${roleId}_${time}`,
+            value: `duration_${roleId}_${time}`,
             emoji: "⏱️",
           };
         });
 
         const durationSelect = new StringSelectMenuBuilder()
-          .setCustomId(`duration_select_${channelId}_${roleId}`)
+          .setCustomId(`duration_select_${roleId}`)
           .setPlaceholder("📅 Select duration")
           .addOptions(durationOptions);
 
@@ -982,7 +940,7 @@ client.on("interactionCreate", async (interaction) => {
             new EmbedBuilder()
               .setTitle("⏱️ Select Duration")
               .setDescription(
-                `How many days do you want to purchase the **${roleName}** role for?`
+                `How many days do you want to purchase the **${roleConfig.roleName}** role for?`
               )
               .setColor(0x5865f2),
           ],
@@ -994,10 +952,9 @@ client.on("interactionCreate", async (interaction) => {
         if (firstTime !== undefined) {
           await handleDurationSelected(
             interaction,
-            channelId,
             roleId,
-            roleName,
-            channelConfig,
+            roleConfig.roleName,
+            roleConfig,
             firstTime,
             userId,
             username
@@ -1028,9 +985,9 @@ client.on("interactionCreate", async (interaction) => {
         "pay_with_discord_wallet_",
         ""
       );
-      const [channelId, roleId, duration] = paymentData.split("_");
+      const [roleId, duration] = paymentData.split("_");
 
-      if (!channelId || !roleId || !duration) {
+      if (!roleId || !duration) {
         await interaction.editReply({
           embeds: [
             new EmbedBuilder()
@@ -1044,7 +1001,6 @@ client.on("interactionCreate", async (interaction) => {
 
       await handleDiscordWalletPayment(
         interaction,
-        channelId,
         roleId,
         parseInt(duration),
         userId,
@@ -1055,9 +1011,9 @@ client.on("interactionCreate", async (interaction) => {
     } else if (interaction.customId.startsWith("pay_with_invoice_")) {
       // Handle payment with invoice
       const paymentData = interaction.customId.replace("pay_with_invoice_", "");
-      const [channelId, roleId, duration] = paymentData.split("_");
+      const [roleId, duration] = paymentData.split("_");
 
-      if (!channelId || !roleId || !duration) {
+      if (!roleId || !duration) {
         await interaction.editReply({
           embeds: [
             new EmbedBuilder()
@@ -1071,7 +1027,6 @@ client.on("interactionCreate", async (interaction) => {
 
       await handleInvoicePayment(
         interaction,
-        channelId,
         roleId,
         parseInt(duration),
         userId,
@@ -1131,9 +1086,9 @@ client.on("interactionCreate", async (interaction) => {
         return;
       }
 
-      // Parse: "duration_channelId_roleId_time"
+      // Parse: "duration_roleId_time"
       const parts = selectedValue.split("_");
-      if (parts.length !== 4) {
+      if (parts.length !== 3) {
         await interaction.editReply({
           embeds: [
             new EmbedBuilder()
@@ -1145,9 +1100,9 @@ client.on("interactionCreate", async (interaction) => {
         return;
       }
 
-      const [, channelId, roleId, timeStr] = parts;
+      const [, roleId, timeStr] = parts;
 
-      if (!channelId || !roleId || !timeStr) {
+      if (!roleId || !timeStr) {
         await interaction.editReply({
           embeds: [
             new EmbedBuilder()
@@ -1161,15 +1116,15 @@ client.on("interactionCreate", async (interaction) => {
 
       const selectedDuration = parseInt(timeStr);
 
-      // Fetch channel config
-      const channelConfig = await fetchChannelConfig(channelId);
+      // Fetch role config
+      const roleConfig = await fetchRoleConfig(roleId);
 
-      if (!channelConfig) {
+      if (!roleConfig) {
         await interaction.editReply({
           embeds: [
             new EmbedBuilder()
               .setTitle("❌ Error")
-              .setDescription("Channel configuration not found.")
+              .setDescription("Role configuration not found.")
               .setColor(0xed4245),
           ],
         });
@@ -1189,26 +1144,12 @@ client.on("interactionCreate", async (interaction) => {
         return;
       }
 
-      const roleName = await getRoleName(guildId, roleId);
-      if (!roleName) {
-        await interaction.editReply({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle("❌ Error")
-              .setDescription("Role not found.")
-              .setColor(0xed4245),
-          ],
-        });
-        return;
-      }
-
       // Show payment options
       await handleDurationSelected(
         interaction,
-        channelId,
         roleId,
-        roleName,
-        channelConfig,
+        roleConfig.roleName,
+        roleConfig,
         selectedDuration,
         userId,
         username
@@ -1228,10 +1169,10 @@ client.on("interactionCreate", async (interaction) => {
         return;
       }
 
-      // Parse the selected value: "channelId_roleId"
-      const [channelId, selectedRoleId] = selectedValue.split("_");
+      // Parse the selected value: "roleId"
+      const selectedRoleId = selectedValue;
 
-      if (!channelId || !selectedRoleId) {
+      if (!selectedRoleId) {
         await interaction.editReply({
           embeds: [
             new EmbedBuilder()
@@ -1243,15 +1184,15 @@ client.on("interactionCreate", async (interaction) => {
         return;
       }
 
-      // Fetch channel configuration from backend
-      const channelConfig = await fetchChannelConfig(channelId);
+      // Fetch role configuration from backend
+      const roleConfig = await fetchRoleConfig(selectedRoleId);
 
-      if (!channelConfig) {
+      if (!roleConfig) {
         await interaction.editReply({
           embeds: [
             new EmbedBuilder()
               .setTitle("❌ Error")
-              .setDescription("Channel configuration not found.")
+              .setDescription("Role configuration not found.")
               .setColor(0xed4245),
           ],
         });
@@ -1272,24 +1213,9 @@ client.on("interactionCreate", async (interaction) => {
         return;
       }
 
-      // Get role information from Discord
-      const roleName = await getRoleName(guildId, selectedRoleId);
-
-      if (!roleName) {
-        await interaction.editReply({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle("❌ Error")
-              .setDescription("Role not found in this server.")
-              .setColor(0xed4245),
-          ],
-        });
-        return;
-      }
-
       // Calculate cost and duration for display
-      const roleCost = Number(channelConfig.costInUsdc);
-      const timeOptions = channelConfig.roleApplicableTime;
+      const roleCost = Number(roleConfig.costInUsdc);
+      const timeOptions = roleConfig.roleApplicableTime;
 
       let durationDisplay = "";
       if (Array.isArray(timeOptions)) {
@@ -1309,8 +1235,8 @@ client.on("interactionCreate", async (interaction) => {
 
       // Create a "Get Role" button for this specific user's ephemeral message
       const getRoleButton = new ButtonBuilder()
-        .setCustomId(`get_role_${channelId}_${selectedRoleId}`)
-        .setLabel(`Get ${roleName}`)
+        .setCustomId(`get_role_${selectedRoleId}`)
+        .setLabel(`Get ${roleConfig.roleName}`)
         .setEmoji("🎭")
         .setStyle(ButtonStyle.Primary);
 
@@ -1324,7 +1250,7 @@ client.on("interactionCreate", async (interaction) => {
           new EmbedBuilder()
             .setTitle("✅ Role Selected")
             .setDescription(
-              `You have selected the **${roleName}** role!\n\n` +
+              `You have selected the **${roleConfig.roleName}** role!\n\n` +
                 `💰 **Cost:** ${roleCost / 1000000} USDC per day\n` +
                 `⏱️ **Duration:** ${durationDisplay}\n\n` +
                 `Click the button below to proceed with the purchase.`
@@ -1336,7 +1262,7 @@ client.on("interactionCreate", async (interaction) => {
       });
 
       console.log(
-        `🎭 ${username} (${userId}) selected ${roleName} role from dropdown in channel ${channelId}`
+        `🎭 ${username} (${userId}) selected ${roleConfig.roleName} role from dropdown`
       );
     }
   }

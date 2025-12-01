@@ -1,13 +1,14 @@
 "use client";
 
+import RevenueChart from "@/components/revenue-chart";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { RoleAssigned } from "@/types/telegram";
-import { ArrowRight, Clock, Server, Shield, User, Users } from "lucide-react";
-import { useAccount } from "wagmi";
-import RevenueChart from "@/components/revenue-chart";
+import { Clock, Server, Shield, User, Users } from "lucide-react";
 import Link from "next/link";
+import { FaExternalLinkAlt } from "react-icons/fa";
+import { useAccount } from "wagmi";
 
 export default function AdminDashboard({
   serverId,
@@ -236,9 +237,7 @@ export default function AdminDashboard({
                               <div className="flex items-center gap-1">
                                 <Clock className="h-3 w-3 text-muted-foreground" />
                                 <span className="text-sm">
-                                  {formatDate(
-                                    new Date(roleAssigned.expiryTime)
-                                  )}
+                                  {formatDate(new Date(roleAssigned.expiresOn))}
                                 </span>
                               </div>
                             </td>
@@ -248,7 +247,7 @@ export default function AdminDashboard({
                                   !roleAssigned.active
                                     ? "destructive"
                                     : new Date(
-                                        roleAssigned.expiryTime
+                                        roleAssigned.expiresOn
                                       ).getTime() -
                                         new Date().getTime() <
                                       7 * 24 * 60 * 60 * 1000
@@ -258,7 +257,7 @@ export default function AdminDashboard({
                                 className="text-xs"
                               >
                                 {getTimeRemaining(
-                                  new Date(roleAssigned.expiryTime)
+                                  new Date(roleAssigned.expiresOn)
                                 )}
                               </Badge>
                             </td>
@@ -274,8 +273,7 @@ export default function AdminDashboard({
                                 rel="noopener noreferrer"
                                 className="text-sm text-primary hover:underline"
                               >
-                                View Transaction
-                                <ArrowRight className="h-4 w-4 ml-2" />
+                                <FaExternalLinkAlt className="h-4 w-4 ml-2" />
                               </Link>
                             </td>
                             <td className="p-4">

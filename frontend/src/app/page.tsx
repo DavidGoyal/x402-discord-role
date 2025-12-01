@@ -9,7 +9,7 @@ import { FaDiscord, FaTelegram } from "react-icons/fa6";
 async function getDiscordStats(): Promise<{
   users: number;
   servers: number;
-  channels: number;
+  roles: number;
 }> {
   try {
     const response = await axios.get(
@@ -21,7 +21,7 @@ async function getDiscordStats(): Promise<{
     return {
       users: 0,
       servers: 0,
-      channels: 0,
+      roles: 0,
     };
   }
 }
@@ -53,7 +53,7 @@ export default async function Home({
   let discordStats = {
     users: 0,
     servers: 0,
-    channels: 0,
+    roles: 0,
   };
   let telegramStats = {
     users: 0,
@@ -195,10 +195,10 @@ export default async function Home({
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <p className="text-sm text-muted-foreground mb-1">
-                          Total Channels
+                          Total Roles
                         </p>
                         <p className="text-3xl font-bold">
-                          {formatNumber(discordStats.channels)}
+                          {formatNumber(discordStats.roles)}
                         </p>
                       </div>
                       <Activity className="h-10 w-10 text-primary opacity-50 shrink" />
