@@ -18,6 +18,7 @@ import { prisma } from "../prisma/prisma.js";
 import { createNetworkUser, getBalance } from "../utils/user.js";
 import type { Accepts } from "../types.js";
 import { v4 as uuidv4 } from "uuid";
+import jwt from "jsonwebtoken";
 
 const facilitatorUrl = process.env.FACILITATOR_URL as Resource;
 const { verify, settle } = useFacilitator({ url: facilitatorUrl });
@@ -636,5 +637,148 @@ export const getInvoice = async (req: Request, res: Response) => {
     console.error(error);
     res.status(500).json({ success: false, error: "Internal server error" });
     return;
+  }
+};
+
+export const buyMyServerSubscription = async (req: Request, res: Response) => {
+  try {
+    const cookie = req.cookies["x402roleaccess-siwe"];
+    if (!cookie) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized",
+      });
+    }
+
+    const address = jwt.verify(cookie, process.env.JWT_SECRET!) as string;
+    if (!address) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized",
+      });
+    }
+
+    const { serverDiscordId } = req.params;
+    if (!serverDiscordId) {
+      return res.status(400).json({
+        success: false,
+        error: "Server ID is required",
+      });
+    }
+
+    const server = await prisma.server.findUnique({
+      where: {
+        serverDiscordId: serverDiscordId,
+        ownerAddress: { equals: address, mode: "insensitive" },
+      },
+    });
+
+    if (!server) {
+      return res.status(404).json({
+        success: false,
+        error: "Server not found or you don't have permission to access it",
+      });
+    }
+
+    const { amount } = req.body;
+    console.log(amount);
+
+    if (amount != "1" && amount != "2" && amount != "3") {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid amount",
+      });
+    }
+
+    const resource =
+      `${req.protocol}://${req.headers.host}${req.originalUrl}` as Resource;
+    const priceInUsdc = Number(amount);
+    const receiverAddress = process.env.PAYMENT_ADDRESS as `0x${string}`;
+    console.log(`Price in USDC: ${priceInUsdc}`);
+    const paymentRequirements = [
+      createExactPaymentRequirements(
+        priceInUsdc.toString(),
+        "base-sepolia" as Network,
+        resource,
+        `Buy subscription for ${server.name}`,
+        receiverAddress as `0x${string}`
+      ),
+    ];
+    res.setHeader("content-type", "application/json");
+
+    const isValid = await verifyPayment(req, res, paymentRequirements);
+    if (!isValid) {
+      console.error("Payment verification failed");
+      res.status(402).json({
+        x402Version,
+        error: "Payment verification failed",
+        accepts: paymentRequirements,
+      });
+      return;
+    }
+
+    try {
+      const decodedPayment = exact.evm.decodePayment(req.header("X-PAYMENT")!);
+
+      // Find the matching payment requirement
+      const selectedPaymentRequirement =
+        findMatchingPaymentRequirements(paymentRequirements, decodedPayment) ||
+        paymentRequirements[0];
+
+      const settleResponse = await settle(
+        decodedPayment,
+        selectedPaymentRequirement!
+      );
+
+      if (!settleResponse.success) {
+        console.log("Failed to settle payment");
+        res.status(402).json({
+          x402Version,
+          error: settleResponse.errorReason || "Failed to settle payment",
+          accepts: paymentRequirements,
+          payer: settleResponse.payer,
+        });
+        return;
+      }
+      const responseHeader = settleResponseHeader(settleResponse);
+      res.setHeader("X-PAYMENT-RESPONSE", responseHeader);
+      res.setHeader("x-payment-response", responseHeader);
+
+      if (server.expiresOn <= new Date()) {
+        await prisma.server.update({
+          where: { id: server.id },
+          data: {
+            expiresOn: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            numberOfTxns: amount === "1" ? 50 : amount === "2" ? 100 : 200,
+          },
+        });
+      } else {
+        await prisma.server.update({
+          where: { id: server.id },
+          data: {
+            expiresOn: new Date(
+              server.expiresOn.getTime() + 30 * 24 * 60 * 60 * 1000
+            ),
+            numberOfTxns: {
+              increment: amount === "1" ? 50 : amount === "2" ? 100 : 200,
+            },
+          },
+        });
+      }
+
+      res.status(200).json({ success: true });
+      return;
+    } catch (error) {
+      console.error(error);
+      res.status(402).json({
+        x402Version,
+        error,
+        accepts: paymentRequirements,
+      });
+      return;
+    }
+  } catch (error) {
+    console.error("Error fetching server subscription:", error);
+    res.status(500).json({ success: false, error: "Internal server error" });
   }
 };

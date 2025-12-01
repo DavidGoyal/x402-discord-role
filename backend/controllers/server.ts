@@ -415,3 +415,61 @@ function getISOWeek(date: Date): number {
   );
   return weekNumber;
 }
+
+export const getMyServerSubscription = async (req: Request, res: Response) => {
+  try {
+    const cookie = req.cookies["x402roleaccess-siwe"];
+    if (!cookie) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized",
+      });
+    }
+
+    const address = jwt.verify(cookie, process.env.JWT_SECRET!) as string;
+    if (!address) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized",
+      });
+    }
+
+    const { serverDiscordId } = req.params;
+    if (!serverDiscordId) {
+      return res.status(400).json({
+        success: false,
+        error: "Server ID is required",
+      });
+    }
+
+    const server = await prisma.server.findUnique({
+      where: {
+        serverDiscordId: serverDiscordId,
+        ownerAddress: { equals: address, mode: "insensitive" },
+      },
+    });
+
+    if (!server) {
+      return res.status(404).json({
+        success: false,
+        error: "Server not found or you don't have permission to access it",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      subscription: {
+        serverName: server.name,
+        serverDiscordId: server.serverDiscordId,
+        expiresOn: server.expiresOn,
+        numberOfTxns: server.numberOfTxns.toString(),
+        receiverAddress: server.receiverEthereumAddress,
+        isExpired: server.expiresOn < new Date(),
+        hasTransactionsLeft: server.numberOfTxns > 0,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching server subscription:", error);
+    res.status(500).json({ success: false, error: "Internal server error" });
+  }
+};

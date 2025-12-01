@@ -37,3 +37,13 @@ export type RoleAssigned = {
   expiresOn: Date;
   active: boolean;
 };
+
+export type ServerSubscription = {
+  serverName: string;
+  serverTelegramId: string;
+  expiresOn: Date;
+  numberOfTxns: string;
+  receiverAddress: string;
+  isExpired: boolean;
+  hasTransactionsLeft: boolean;
+};

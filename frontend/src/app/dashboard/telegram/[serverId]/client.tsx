@@ -2,10 +2,11 @@
 
 import RevenueChart from "@/components/revenue-chart";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { RoleAssigned } from "@/types/telegram";
-import { Clock, Server, Shield, User, Users } from "lucide-react";
+import { Clock, CreditCard, Server, Shield, User, Users } from "lucide-react";
 import Link from "next/link";
 import { FaExternalLinkAlt } from "react-icons/fa";
 import { useAccount } from "wagmi";
@@ -65,6 +66,18 @@ export default function AdminDashboard({
               View and manage all bought subscriptions across your servers.
               Track expiration dates, user details, and server information.
             </p>
+            <div className="mt-6">
+              <Link href={`/dashboard/telegram/${serverId}/subscription`}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="gap-2 cursor-pointer"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Manage Subscription
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 

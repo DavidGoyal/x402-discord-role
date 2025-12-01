@@ -55,3 +55,13 @@ export type RoleAssigned = {
     costInUsdc: string;
   };
 };
+
+export type ServerSubscription = {
+  serverName: string;
+  serverDiscordId: string;
+  expiresOn: Date;
+  numberOfTxns: string;
+  receiverAddress: string;
+  isExpired: boolean;
+  hasTransactionsLeft: boolean;
+};
